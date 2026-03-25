@@ -1,6 +1,5 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as FileSystem from 'expo-file-system';
-import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 import * as Location from 'expo-location';
 import * as MediaLibrary from 'expo-media-library';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -33,6 +32,21 @@ function escapeFfmpegText(text) {
     .replace(/'/g, "\\'")
     .replace(/,/g, '\\,')
     .replace(/%/g, '\\%');
+}
+
+
+function getFfmpegBindings() {
+  try {
+    // Carregamento opcional: evita crash no Expo Go (módulo nativo ausente).
+    // eslint-disable-next-line global-require
+    const ffmpeg = require('ffmpeg-kit-react-native');
+    if (ffmpeg?.FFmpegKit && ffmpeg?.ReturnCode) {
+      return ffmpeg;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
 }
 
 export default function App() {
@@ -143,6 +157,12 @@ export default function App() {
   }
 
   async function burnOverlayWithFfmpeg(inputUri, shotTimestamp, shotCoords) {
+    const ffmpeg = getFfmpegBindings();
+    if (!ffmpeg) {
+      throw new Error('FFmpeg indisponível neste runtime (use Dev Build para habilitar).');
+    }
+
+    const { FFmpegKit, ReturnCode } = ffmpeg;
     const outputUri = `${FileSystem.cacheDirectory}gravei_overlay_${Date.now()}.mp4`;
 
     const timestampLine = `Data/Hora: ${shotTimestamp} (${timezone})`;
@@ -200,7 +220,7 @@ export default function App() {
       } catch (ffmpegError) {
         Alert.alert(
           'Aviso de processamento',
-          'Não foi possível inserir overlay no vídeo com FFmpeg. O arquivo original será salvo.'
+          'FFmpeg não está disponível nesse ambiente (ex.: Expo Go). O arquivo original será salvo. Para burn-in use Dev Build.'
         );
       }
 
