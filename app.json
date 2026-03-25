@@ -53,8 +53,7 @@
             "backgroundColor": "#000000"
           }
         }
-      ],
-      "ffmpeg-kit-react-native"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
